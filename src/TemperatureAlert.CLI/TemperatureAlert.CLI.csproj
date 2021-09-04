@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net5.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TemperatureAlert.Domain.Abstractions\TemperatureAlert.Domain.Abstractions.csproj" />
+    <ProjectReference Include="..\TemperatureAlert.Domain\TemperatureAlert.Domain.csproj" />
+    <ProjectReference Include="..\TemperatureAlert.Repository\TemperatureAlert.Repository.csproj" />
+  </ItemGroup>
+
+</Project>
