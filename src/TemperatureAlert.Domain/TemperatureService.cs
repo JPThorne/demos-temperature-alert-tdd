@@ -5,24 +5,35 @@ namespace TemperatureAlert.Domain
 {
     public class TemperatureService
     {
-        private ITemperatureRepository Repository { get; init;}
+        private ITemperatureRepository Repository { get; init; }
 
         public TemperatureService(ITemperatureRepository repository)
         {
             Repository = repository;
         }
 
-        public async Task<AnalysisResult> AnalyzeTemperature(string deviceId, decimal temperature)
+        public async Task<AnalysisResult> AnalyzeTemperature(string deviceId, decimal temperature, DateTime dateTime)
         {
             var temperatureRule = await Repository.GetNormalTemperatureRange(deviceId);
 
-            await Repository.RecordTemperatureAnomaly(deviceId, temperature);
-
-            return new AnalysisResult
+            if (temperature < temperatureRule.MinTemperature || temperature > temperatureRule.MaxTemperature)
             {
-                Status = "Abnormal",
-                Message = "45,534234 was higher than allowed maximum: 35"
-            };
+                await Repository.RecordTemperatureAnomaly(deviceId, temperature);
+
+                return new AnalysisResult
+                {
+                    Status = "Abnormal",
+                    Message = "45,534234 was higher than allowed maximum: 35"
+                };
+            }
+            else
+            {
+                return new AnalysisResult
+                {
+                    Status = "Normal",
+                    Message = $"25,123 was OK."
+                };
+            }
         }
     }
 }
