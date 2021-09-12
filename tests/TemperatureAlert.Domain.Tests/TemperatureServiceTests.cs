@@ -133,5 +133,47 @@ namespace TemperatureAlert.Domain.Tests
             await repository.Received(1).GetTemperatureAnomalyCount(deviceId, nowMinusXMinutes);
             await AlertService.Received(1).SendTemperatureAlert(deviceId, abnormalTemperature, now);
         }
+
+        [Theory]
+        [InlineData(4, 10)]
+        [InlineData(3, 10)]
+        public async Task Test_XOrLessAnomaliesForTimeRangeY_ShouldNotTriggerAlert(int numberOfAnomalies, int numberOfMinutes)
+        {
+            //arrange
+            var deviceId = "1";
+            var abnormalTemperature = 42m;
+            var now = DateTime.UtcNow;
+
+            var normalMinTemperature = 10m;
+            var normalMaxTemperature = 35m;
+
+            var repository = Substitute.For<ITemperatureRepository>();
+
+            repository.GetNormalTemperatureRange(deviceId).Returns(new TemperatureRule
+            {
+                MinTemperature = normalMinTemperature,
+                MaxTemperature = normalMaxTemperature,
+                MaximumMinutes = 10,
+                MaximumNumberOfAnomalies = 5
+            });
+
+            var nowMinusXMinutes = now.AddMinutes(-numberOfMinutes);
+
+            repository.GetTemperatureAnomalyCount(deviceId, nowMinusXMinutes).Returns(numberOfAnomalies);
+
+            var service = new TemperatureService(repository, AlertService);
+
+            //act
+            var result = await service.AnalyzeTemperature(deviceId, abnormalTemperature, now);
+
+            //assert
+            Assert.NotNull(result);
+            Assert.Equal("Abnormal", result.Status);
+            Assert.Equal($"{abnormalTemperature} was higher than allowed maximum: {normalMaxTemperature}", result.Message);
+            await repository.Received(1).GetNormalTemperatureRange(deviceId);
+            await repository.Received(1).RecordTemperatureAnomaly(deviceId, abnormalTemperature);
+            await repository.Received(1).GetTemperatureAnomalyCount(deviceId, nowMinusXMinutes);
+            await AlertService.Received(0).SendTemperatureAlert(deviceId, abnormalTemperature, now);
+        }
     }
 }
