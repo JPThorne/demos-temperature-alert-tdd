@@ -37,7 +37,7 @@ namespace TemperatureAlert.Domain.Tests
             var dateTime = DateTime.UtcNow;
 
             var normalMinTemperature = 10m;
-            var normalMaxTemperature = 35m;
+            var normalMaxTemperature = 40m;
 
             var repository = Substitute.For<ITemperatureRepository>();
 

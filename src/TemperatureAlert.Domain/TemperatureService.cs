@@ -32,7 +32,7 @@ namespace TemperatureAlert.Domain
                 return new AnalysisResult
                 {
                     Status = "Abnormal",
-                    Message = $"{temperature} was higher than allowed maximum: 35"
+                    Message = $"{temperature} was higher than allowed maximum: {temperatureRule.MaxTemperature}"
                 };
             }
             else
