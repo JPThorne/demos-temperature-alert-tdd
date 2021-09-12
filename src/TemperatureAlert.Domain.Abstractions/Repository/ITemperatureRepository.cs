@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 
 namespace TemperatureAlert.Domain
 {
@@ -6,5 +7,6 @@ namespace TemperatureAlert.Domain
     {
         Task<TemperatureRule> GetNormalTemperatureRange(string deviceId);
         Task RecordTemperatureAnomaly(string deviceId, decimal abnormalTemperature);
+        Task<int> GetTemperatureAnomalyCount(string deviceId, DateTime dateTime);
     }
 }

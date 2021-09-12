@@ -1,5 +1,6 @@
 ﻿using NSubstitute;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -7,7 +8,12 @@ namespace TemperatureAlert.Domain.Tests
 {
     public class TemperatureServiceTests
     {
-        public TemperatureServiceTests() { }
+        private IAlertService AlertService { get; init; }
+
+        public TemperatureServiceTests()
+        {
+            AlertService = Substitute.For<IAlertService>();
+        }
 
         [Fact]
         public void Test_CanConstruct()
@@ -16,7 +22,7 @@ namespace TemperatureAlert.Domain.Tests
             var repository = Substitute.For<ITemperatureRepository>();
 
             //act
-            var service = new TemperatureService(repository);
+            var service = new TemperatureService(repository, AlertService);
 
             //assert
             Assert.NotNull(service);
@@ -41,7 +47,7 @@ namespace TemperatureAlert.Domain.Tests
                 MaxTemperature = normalMaxTemperature
             });
 
-            var service = new TemperatureService(repository);
+            var service = new TemperatureService(repository, AlertService);
 
             //act
             var result = await service.AnalyzeTemperature(deviceId, abnormalTemperature, dateTime);
@@ -73,7 +79,7 @@ namespace TemperatureAlert.Domain.Tests
                 MaxTemperature = normalMaxTemperature
             });
 
-            var service = new TemperatureService(repository);
+            var service = new TemperatureService(repository, AlertService);
 
             //act
             var result = await service.AnalyzeTemperature(deviceId, normalTemperature, dateTime);
@@ -84,6 +90,48 @@ namespace TemperatureAlert.Domain.Tests
             Assert.Equal($"{normalTemperature} was OK.", result.Message);
             await repository.Received(1).GetNormalTemperatureRange(deviceId);
             await repository.Received(0).RecordTemperatureAnomaly(Arg.Any<string>(), Arg.Any<decimal>());
+        }
+
+        [Theory]
+        [InlineData(5, 10)]
+        [InlineData(6, 10)]
+        public async Task Test_XOrMoreAnomaliesForTimeRangeY_ShouldTriggerAlert(int numberOfAnomalies, int numberOfMinutes)
+        {
+            //arrange
+            var deviceId = "1";
+            var abnormalTemperature = 42m;
+            var now = DateTime.UtcNow;
+
+            var normalMinTemperature = 10m;
+            var normalMaxTemperature = 35m;
+
+            var repository = Substitute.For<ITemperatureRepository>();
+
+            repository.GetNormalTemperatureRange(deviceId).Returns(new TemperatureRule
+            {
+                MinTemperature = normalMinTemperature,
+                MaxTemperature = normalMaxTemperature,
+                MaximumMinutes = 10,
+                MaximumNumberOfAnomalies = 5
+            });
+
+            var nowMinusXMinutes = now.AddMinutes(-numberOfMinutes);
+
+            repository.GetTemperatureAnomalyCount(deviceId, nowMinusXMinutes).Returns(numberOfAnomalies);
+
+            var service = new TemperatureService(repository, AlertService);
+
+            //act
+            var result = await service.AnalyzeTemperature(deviceId, abnormalTemperature, now);
+
+            //assert
+            Assert.NotNull(result);
+            Assert.Equal("Abnormal", result.Status);
+            Assert.Equal($"{abnormalTemperature} was higher than allowed maximum: {normalMaxTemperature}", result.Message);
+            await repository.Received(1).GetNormalTemperatureRange(deviceId);
+            await repository.Received(1).RecordTemperatureAnomaly(deviceId, abnormalTemperature);
+            await repository.Received(1).GetTemperatureAnomalyCount(deviceId, nowMinusXMinutes);
+            await AlertService.Received(1).SendTemperatureAlert(deviceId, abnormalTemperature, now);
         }
     }
 }

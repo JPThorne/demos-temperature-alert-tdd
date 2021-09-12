@@ -5,8 +5,4 @@
     <RootNamespace>TemperatureAlert.Domain</RootNamespace>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Folder Include="Service\" />
-  </ItemGroup>
-
 </Project>
