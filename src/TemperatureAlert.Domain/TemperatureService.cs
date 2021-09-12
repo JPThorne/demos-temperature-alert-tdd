@@ -40,7 +40,7 @@ namespace TemperatureAlert.Domain
                 return new AnalysisResult
                 {
                     Status = "Normal",
-                    Message = $"25,123 was OK."
+                    Message = $"{temperature} was OK."
                 };
             }
         }

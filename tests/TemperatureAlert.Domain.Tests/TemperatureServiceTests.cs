@@ -60,12 +60,14 @@ namespace TemperatureAlert.Domain.Tests
             await repository.Received(1).RecordTemperatureAnomaly(deviceId, abnormalTemperature);
         }
 
-        [Fact]
-        public async Task Test_IfTemperatureIsNormal_NoAnomalyIsRecorded()
+        [Theory]
+        [InlineData(10.1)]
+        [InlineData(25.123)]
+        [InlineData(34.99999)]
+        public async Task Test_IfTemperatureIsNormal_NoAnomalyIsRecorded(decimal normalTemperature)
         {
             //arrange
             var deviceId = "1";
-            var normalTemperature = 25.123m;
             var dateTime = DateTime.UtcNow;
 
             var normalMinTemperature = 10m;
